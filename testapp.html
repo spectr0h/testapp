@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciamento de Perfis</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        #container {
+            text-align: center;
+        }
+        button {
+            background-color: #1f1f1f;
+            color: #ffffff;
+            border: none;
+            padding: 10px;
+            margin: 10px 0;
+            cursor: pointer;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        button:hover {
+            background-color: #333333;
+        }
+        #money, #experience, #level {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 1.2em;
+        }
+        #experience {
+            top: 40px;
+        }
+        #level {
+            top: 70px;
+        }
+        .hidden {
+            display: none;
+        }
+        .message {
+            font-size: 1em;
+            color: green;
+            margin-top: 10px;
+        }
+        .inventory-item, .equipment-item, .shop-item {
+            width: 100px;
+            height: 100px;
+            background-color: #1f1f1f;
+            border: 1px solid #333333;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 5px;
+            position: relative;
+        }
+        .inventory-item img, .equipment-item img, .shop-item img {
+            width: 50px;
+            height: 50px;
+        }
+        .inventory-item .item-quantity, .equipment-item .item-quantity, .shop-item .item-quantity {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            background-color: #333333;
+            border-radius: 3px;
+            padding: 2px 5px;
+            font-size: 0.8em;
+        }
+        #inventory-list, #equipment-list, #shop-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        #inventory-options, #equipment-options, #shop-options {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 10px;
+        }
+        #inventory-options button, #equipment-options button, #shop-options button {
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="money">Dinheiro: R$<span id="money-amount">0</span></div>
+    <div id="level">Nível: <span id="level-amount">1</span></div>
+    <div id="experience">Experiência: <span id="experience-amount">0</span>/<span id="experience-required">100</span></div>
+    <div id="container">
+        <div id="profile-selection">
+            <h1>Selecione um Perfil</h1>
+            <select id="profile-dropdown"></select>
+            <button onclick="createNewProfile()">Criar Novo Perfil</button>
+            <button onclick="enterProfile()">Entrar</button>
+            <button onclick="confirmDeleteProfile()">Deletar Perfil</button>
+        </div>
+        <div id="create-profile" class="hidden">
+            <h1>Criar Novo Perfil</h1>
+            <input type="text" id="new-profile-name" placeholder="Nome do Perfil">
+            <button onclick="saveProfile()">Salvar</button>
+            <button onclick="returnToProfileSelection()">Retornar à Seleção de Perfis</button>
+        </div>
+        <div id="confirm-delete" class="hidden">
+            <h1>Tem certeza que deseja deletar este perfil?</h1>
+            <button onclick="deleteProfile()">OK</button>
+            <button onclick="cancelDeleteProfile()">Cancelar</button>
+        </div>
+        <div id="menu" class="hidden">
+            <h1 id="current-profile"></h1>
+            <button onclick="showJobMenu()"><img src="https://cdn-icons-png.flaticon.com/512/3281/3281289.png" style="width: 20px;" alt="Trabalhos"> Trabalhos</button>
+            <button onclick="showInventory()"><img src="https://cdn-icons-png.flaticon.com/512/3275/3275955.png" style="width: 20px;" alt="Inventário"> Inventário</button>
+            <button onclick="showEquipment()"><img src="https://cdn-icons-png.flaticon.com/512/4873/4873901.png" style="width: 20px;" alt="Equipamentos"> Equipamentos</button>
+            <button onclick="showBankAccount()"><img src="https://cdn-icons-png.flaticon.com/512/2953/2953536.png" style="width: 20px;" alt="Conta Bancária"> Conta Bancária</button>
+            <button onclick="showShopMenu()"><img src="https://cdn-icons-png.flaticon.com/512/10936/10936335.png" style="width: 20px;" alt="Loja"> Loja</button>
+            <button onclick="returnToProfileSelection()"><img src="https://cdn-icons-png.flaticon.com/512/1828/1828490.png" style="width: 20px;" alt="Retornar"> Retornar à Seleção de Perfis</button>
+        </div>
+        <div id="job-menu" class="hidden">
+            <h1>Trabalhos</h1>
+            <button onclick="showMiningMenu()"><img src="https://cdn-icons-png.flaticon.com/512/3063/3063821.png" style="width: 20px;" alt="Mineração"> Mineração</button>
+            <button onclick="returnToMainMenu()"><img src="https://cdn-icons-png.flaticon.com/512/2099/2099190.png" style="width: 20px;" alt="Voltar"> Voltar ao Menu Principal</button>
+        </div>
+        <div id="mining-menu" class="hidden">
+            <h1>Mineração</h1>
+            <button onclick="showResourcePage('Pedra', 10)"><img src="https://cdn-icons-png.flaticon.com/512/4405/4405457.png" style="width: 20px;" alt="Pedra"> Pedra</button>
+            <button onclick="showResourcePage('Ferro', 50)"><img src="https://cdn-icons-png.flaticon.com/512/3269/3269342.png" style="width: 20px;" alt="Ferro"> Ferro</button>
+            <button onclick="showResourcePage('Carvão', 30)"><img src="https://cdn-icons-png.flaticon.com/512/176/176598.png" style="width: 20px;" alt="Carvão"> Carvão</button>
+            <button onclick="showResourcePage('Ouro', 200, 'planta')"><img src="https://cdn-icons-png.flaticon.com/512/3380/3380422.png" style="width: 20px;" alt="Ouro"> Ouro</button>
+            <button onclick="showResourcePage('Diamante', 500, 'bateia')"><img src="https://cdn-icons-png.flaticon.com/512/4330/4330638.png" style="width: 20px;" alt="Diamante"> Diamante</button>
+            <button onclick="returnToMainMenu()"><img src="https://cdn-icons-png.flaticon.com/512/2099/2099190.png" style="width: 20px;" alt="Voltar"> Voltar ao Menu Principal</button>
+        </div>
+				        <div id="resource-page" class="hidden">
+            <h1 id="resource-title"></h1>
+            <div id="resource-message" class="message hidden"></div>
+            <button id="resource-button" onclick="mineResource()">Minerar (<span id="resource-health"></span>)</button>
+            <button onclick="returnToMiningMenu()"><img src="https://cdn-icons-png.flaticon.com/512/2099/2099190.png" style="width: 20px;" alt="Voltar"> Voltar ao Menu Principal</button>
+        </div>
+        <div id="inventory" class="hidden">
+            <h1>Inventário</h1>
+            <div id="inventory-list"></div>
+            <div id="inventory-options">
+                <button onclick="sellCurrentItem()">Vender</button>
+                <button onclick="discardCurrentItem()">Descartar</button>
+            </div>
+            <button onclick="returnToMainMenu()"><img src="https://cdn-icons-png.flaticon.com/512/2099/2099190.png" style="width: 20px;" alt="Voltar"> Voltar ao Menu Principal</button>
+        </div>
+        <div id="equipment" class="hidden">
+            <h1>Equipamentos</h1>
+            <div id="equipment-list"></div>
+            <button onclick="returnToMainMenu()"><img src="https://cdn-icons-png.flaticon.com/512/2099/2099190.png" style="width: 20px;" alt="Voltar"> Voltar ao Menu Principal</button>
+        </div>
+        <div id="bank-account" class="hidden">
+            <h1>Conta Bancária</h1>
+            <button onclick="returnToMainMenu()"><img src="https://cdn-icons-png.flaticon.com/512/2099/2099190.png" style="width: 20px;" alt="Voltar"> Voltar ao Menu Principal</button>
+        </div>
+        <div id="shop-menu" class="hidden">
+            <h1>Loja</h1>
+            <div id="shop-list"></div>
+            <div id="shop-options">
+                <button onclick="confirmBuyItem()">Comprar</button>
+            </div>
+            <button onclick="returnToMainMenu()"><img src="https://cdn-icons-png.flaticon.com/512/2099/2099190.png" style="width: 20px;" alt="Voltar"> Voltar ao Menu Principal</button>
+        </div>
+    </div>
+
+    <script>
+        let currentMoney = 0;
+        let currentProfile = '';
+        let inventory = {};
+        let equippedItem = { picareta: null, planta: null, bateia: null };
+        let currentResource = '';
+        let currentResourceHealth = 0;
+        let maxResourceHealth = 0;
+        let currentExperience = 0;
+        let experienceRequired = 100;
+        let level = 1;
+        let currentItem = null;
+        let currentShopItem = null;
+        const experiencePerResource = {
+            'Pedra': 2,
+            'Ferro': 5,
+            'Carvão': 4,
+            'Ouro': 10,
+            'Diamante': 30
+        };
+        const moneyPerResource = {
+            'Pedra': 10,
+            'Ferro': 50,
+            'Carvão': 30,
+            'Ouro': 100,
+            'Diamante': 500
+        };
+        const requiredTools = {
+            'Ouro': 'planta',
+            'Diamante': 'bateia'
+        };
+        const toolData = {
+            'Picareta de Ferro': { type: 'picareta', damage: 3, price: 100, level: 2, icon: 'https://cdn-icons-png.flaticon.com/512/3063/3063821.png' },
+            'Picareta de Aço': { type: 'picareta', damage: 10, price: 700, level: 4, icon: 'https://cdn-icons-png.flaticon.com/512/3063/3063821.png' },
+            'Picareta de Aço Negro': { type: 'picareta', damage: 50, price: 1500, level: 5, icon: 'https://cdn-icons-png.flaticon.com/512/3063/3063821.png' },
+            'Picareta de Adamantium': { type: 'picareta', damage: 100, price: 5000, level: 8, icon: 'https://cdn-icons-png.flaticon.com/512/3063/3063821.png' },
+            'Planta de Lavagem Pequena': { type: 'planta', damage: 50, price: 50000, level: 5, icon: 'https://cdn-icons-png.flaticon.com/512/4330/4330638.png' },
+            'Planta de Lavagem Média': { type: 'planta', damage: 100, price: 100000, level: 10, icon: 'https://cdn-icons-png.flaticon.com/512/4330/4330638.png' },
+            'Bateia': { type: 'bateia', damage: 20, price: 5000, level: 7, icon: 'https://cdn-icons-png.flaticon.com/512/4330/4330638.png' }
+        };
+
+        const itemIcons = {
+            'Pedra': 'https://cdn-icons-png.flaticon.com/512/4405/4405457.png',
+            'Ferro': 'https://cdn-icons-png.flaticon.com/512/3269/3269342.png',
+            'Carvão': 'https://cdn-icons-png.flaticon.com/512/176/176598.png',
+            'Ouro': 'https://cdn-icons-png.flaticon.com/512/3380/3380422.png',
+            'Diamante': 'https://cdn-icons-png.flaticon.com/512/4330/4330638.png'
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProfiles();
+        });
+
+        function loadProfiles() {
+            const profiles = JSON.parse(localStorage.getItem('profiles')) || [];
+            const dropdown = document.getElementById('profile-dropdown');
+            dropdown.innerHTML = '';
+
+            if (profiles.length === 0) {
+                document.getElementById('profile-selection').classList.remove('hidden');
+                document.getElementById('create-profile').classList.add('hidden');
+            } else {
+                profiles.forEach(profile => {
+                    const option = document.createElement('option');
+                    option.value = profile;
+                    option.textContent = profile;
+                    dropdown.appendChild(option);
+                });
+                const createOption = document.createElement('option');
+                createOption.value = 'new';
+                createOption.textContent = 'Criar Novo Perfil';
+                dropdown.appendChild(createOption);
+
+                dropdown.onchange = function() {
+                    if (dropdown.value === 'new') {
+                        createNewProfile();
+                    }
+                };
+            }
+        }
+
+        function createNewProfile() {
+            document.getElementById('profile-selection').classList.add('hidden');
+            document.getElementById('create-profile').classList.remove('hidden');
+        }
+
+        function saveProfile() {
+            const newName = document.getElementById('new-profile-name').value;
+            if (newName) {
+                let profiles = JSON.parse(localStorage.getItem('profiles')) || [];
+                profiles.push(newName);
+                localStorage.setItem('profiles', JSON.stringify(profiles));
+                loadProfiles();
+                document.getElementById('create-profile').classList.add('hidden');
+                document.getElementById('profile-selection').classList.remove('hidden');
+            } else {
+                alert('Por favor, insira um nome de perfil.');
+            }
+        }
+
+        function enterProfile() {
+            const dropdown = document.getElementById('profile-dropdown');
+            if (dropdown.value && dropdown.value !== 'new') {
+                currentProfile = dropdown.value;
+                loadProfileData();
+                loadMenu(currentProfile);
+            } else {
+                alert('Por favor, selecione um perfil.');
+            }
+        }
+
+        function loadProfileData() {
+            const profileData = JSON.parse(localStorage.getItem(currentProfile)) || { money: 0, inventory: {}, equippedItem: { picareta: null, planta: null, bateia: null }, experience: 0, experienceRequired: 100, level: 1 };
+            currentMoney = profileData.money || 0;
+            inventory = profileData.inventory || {};
+            equippedItem = profileData.equippedItem || { picareta: null, planta: null, bateia: null };
+            currentExperience = profileData.experience || 0;
+            experienceRequired = profileData.experienceRequired || 100;
+            level = profileData.level || 1;
+            updateMoneyDisplay();
+            updateExperienceDisplay();
+            updateInventoryDisplay();
+            updateEquipmentDisplay();
+        }
+
+        function saveProfileData() {
+            const profileData = { money: currentMoney, inventory: inventory, equippedItem: equippedItem, experience: currentExperience, experienceRequired: experienceRequired, level: level };
+            localStorage.setItem(currentProfile, JSON.stringify(profileData));
+        }
+
+        function loadMenu(profileName) {
+            document.getElementById('create-profile').classList.add('hidden');
+            document.getElementById('profile-selection').classList.add('hidden');
+            document.getElementById('menu').classList.remove('hidden');
+            document.getElementById('current-profile').textContent = `Perfil Atual: ${profileName}`;
+            updateMoneyDisplay();
+            updateExperienceDisplay();
+        }
+
+        function returnToProfileSelection() {
+            document.getElementById('menu').classList.add('hidden');
+            document.getElementById('create-profile').classList.add('hidden');
+            document.getElementById('profile-selection').classList.remove('hidden');
+            document.getElementById('confirm-delete').classList.add('hidden');
+            document.getElementById('job-menu').classList.add('hidden');
+            document.getElementById('mining-menu').classList.add('hidden');
+            document.getElementById('inventory').classList.add('hidden');
+            document.getElementById('equipment').classList.add('hidden');
+            document.getElementById('bank-account').classList.add('hidden');
+            document.getElementById('resource-page').classList.add('hidden');
+            document.getElementById('shop-menu').classList.add('hidden');
+            loadProfiles();
+        }
+
+        function confirmDeleteProfile() {
+            const dropdown = document.getElementById('profile-dropdown');
+            if (dropdown.value && dropdown.value !== 'new') {
+                document.getElementById('profile-selection').classList.add('hidden');
+                document.getElementById('confirm-delete').classList.remove('hidden');
+            } else {
+                alert('Por favor, selecione um perfil.');
+            }
+        }
+
+        function deleteProfile() {
+            const dropdown = document.getElementById('profile-dropdown');
+            let profiles = JSON.parse(localStorage.getItem('profiles')) || [];
+            const profileToDelete = dropdown.value;
+            profiles = profiles.filter(profile => profile !== profileToDelete);
+            localStorage.setItem('profiles', JSON.stringify(profiles));
+            localStorage.removeItem(profileToDelete);
+            returnToProfileSelection();
+        }
+
+        function cancelDeleteProfile() {
+            document.getElementById('confirm-delete').classList.add('hidden');
+            document.getElementById('profile-selection').classList.remove('hidden');
+        }
+
+        function showJobMenu() {
+            document.getElementById('menu').classList.add('hidden');
+            document.getElementById('job-menu').classList.remove('hidden');
+        }
+
+        function showMiningMenu() {
+            document.getElementById('job-menu').classList.add('hidden');
+            document.getElementById('mining-menu').classList.remove('hidden');
+        }
+
+        function showResourcePage(resource, health, requiredToolType = null) {
+            if (requiredToolType && !equippedItem[requiredToolType]) {
+                alert(`Você precisa da ferramenta correta para minerar ${resource}.`);
+                return;
+            }
+
+            currentResource = resource;
+            maxResourceHealth = health;
+            currentResourceHealth = health;
+
+            document.getElementById('mining-menu').classList.add('hidden');
+            document.getElementById('resource-page').classList.remove('hidden');
+            document.getElementById('resource-title').textContent = `Mineração de ${resource}`;
+            document.getElementById('resource-health').textContent = `${health}/${health}`;
+            document.getElementById('resource-message').classList.add('hidden');
+        }
+
+        function mineResource() {
+            let damage = 1;
+            if (equippedItem.picareta) {
+                damage = toolData[equippedItem.picareta].damage;
+            }
+
+            if (currentResourceHealth > 0) {
+                currentResourceHealth -= damage;
+                if (currentResourceHealth < 0) {
+                    currentResourceHealth = 0;
+                }
+                document.getElementById('resource-health').textContent = `${currentResourceHealth}/${maxResourceHealth}`;
+                if (currentResourceHealth === 0) {
+                    addItemToInventory(currentResource);
+                    addExperience(currentResource);
+                    saveProfileData();
+                    currentResourceHealth = maxResourceHealth;
+                    document.getElementById('resource-health').textContent = `${currentResourceHealth}/${maxResourceHealth}`;
+                    showResourceMessage();
+                }
+            }
+        }
+
+        function addExperience(resource) {
+            const experience = experiencePerResource[resource];
+            currentExperience += experience;
+            while (currentExperience >= experienceRequired) {
+                currentExperience -= experienceRequired;
+                experienceRequired *= 2;
+                level++;
+            }
+            updateExperienceDisplay();
+        }
+
+        function showResourceMessage() {
+            const resourceMessage = document.getElementById('resource-message');
+            resourceMessage.textContent = `Um(a) ${currentResource} foi adicionado(a) ao seu inventário.`;
+            resourceMessage.classList.remove('hidden');
+            setTimeout(() => {
+                resourceMessage.classList.add('hidden');
+            }, 3000);
+        }
+
+        function addItemToInventory(item) {
+            if (inventory[item]) {
+                inventory[item]++;
+            } else {
+                inventory[item] = 1;
+            }
+            saveProfileData();
+            updateInventoryDisplay();
+        }
+
+        function showInventory() {
+            document.getElementById('menu').classList.add('hidden');
+            document.getElementById('inventory').classList.remove('hidden');
+            updateInventoryDisplay();
+        }
+
+        function showEquipment() {
+            document.getElementById('menu').classList.add('hidden');
+            document.getElementById('equipment').classList.remove('hidden');
+            updateEquipmentDisplay();
+        }
+
+        function showBankAccount() {
+            document.getElementById('menu').classList.add('hidden');
+            document.getElementById('bank-account').classList.remove('hidden');
+        }
+
+        function returnToMainMenu() {
+            document.getElementById('menu').classList.remove('hidden');
+            document.getElementById('job-menu').classList.add('hidden');
+            document.getElementById('mining-menu').classList.add('hidden');
+            document.getElementById('inventory').classList.add('hidden');
+            document.getElementById('equipment').classList.add('hidden');
+            document.getElementById('bank-account').classList.add('hidden');
+            document.getElementById('resource-page').classList.add('hidden');
+            document.getElementById('shop-menu').classList.add('hidden');
+        }
+
+        function returnToJobMenu() {
+            document.getElementById('resource-page').classList.add('hidden');
+            document.getElementById('job-menu').classList.remove('hidden');
+        }
+
+        function returnToMiningMenu() {
+            document.getElementById('resource-page').classList.add('hidden');
+            document.getElementById('mining-menu').classList.remove('hidden');
+        }
+
+        function showShopMenu() {
+            document.getElementById('menu').classList.add('hidden');
+            document.getElementById('shop-menu').classList.remove('hidden');
+            updateShopDisplay();
+        }
+
+        function updateMoneyDisplay() {
+            document.getElementById('money-amount').textContent = currentMoney;
+        }
+
+        function updateExperienceDisplay() {
+            document.getElementById('level-amount').textContent = level;
+            document.getElementById('experience-amount').textContent = currentExperience;
+            document.getElementById('experience-required').textContent = experienceRequired;
+        }
+
+        function updateInventoryDisplay() {
+            const inventoryList = document.getElementById('inventory-list');
+            inventoryList.innerHTML = '';
+            for (const item in inventory) {
+                if (inventory.hasOwnProperty(item)) {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.classList.add('inventory-item');
+                    const itemIcon = itemIcons[item];
+                    itemDiv.innerHTML = `
+                        <img src="${itemIcon}" alt="${item}">
+                        <span>${item}</span>
+                        <div class="item-quantity">${inventory[item]}</div>
+                    `;
+                    itemDiv.onclick = () => {
+                        currentItem = item;
+                        document.getElementById('inventory-options').style.display = 'flex';
+                    };
+                    inventoryList.appendChild(itemDiv);
+                }
+            }
+        }
+
+        function updateEquipmentDisplay() {
+            const equipmentList = document.getElementById('equipment-list');
+            equipmentList.innerHTML = '';
+            for (const item in equippedItem) {
+                if (equippedItem[item]) {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.classList.add('equipment-item');
+                    const itemIcon = toolData[equippedItem[item]].icon;
+                    const damage = toolData[equippedItem[item]].damage;
+                    itemDiv.innerHTML = `
+                        <img src="${itemIcon}" alt="${equippedItem[item]}">
+                        <span>${equippedItem[item]}</span>
+                        <div class="item-quantity">Dano: ${damage}</div>
+                    `;
+                    equipmentList.appendChild(itemDiv);
+                }
+            }
+        }
+
+        function updateShopDisplay() {
+            const shopList = document.getElementById('shop-list');
+            shopList.innerHTML = '';
+            for (const itemName in toolData) {
+                const item = toolData[itemName];
+                const itemDiv = document.createElement('div');
+                itemDiv.classList.add('shop-item');
+                itemDiv.innerHTML = `
+                    <img src="${item.icon}" alt="${itemName}">
+                    <span>${itemName}</span>
+                    <div class="item-quantity">R$${item.price}</div>
+                    <div class="item-quantity">Nível: ${item.level}</div>
+                `;
+                itemDiv.onclick = () => {
+                    currentShopItem = itemName;
+                    document.getElementById('shop-options').style.display = 'flex';
+                };
+                shopList.appendChild(itemDiv);
+            }
+        }
+
+        function confirmBuyItem() {
+            const item = toolData[currentShopItem];
+            if (level >= item.level) {
+                if (currentMoney >= item.price) {
+                    currentMoney -= item.price;
+                    alert(`Você comprou ${currentShopItem} por R$${item.price}.`);
+                    equippedItem[item.type] = currentShopItem;
+                    saveProfileData();
+                    updateMoneyDisplay();
+                    updateEquipmentDisplay();
+                    document.getElementById('shop-options').style.display = 'none';
+                } else {
+                    alert('Dinheiro insuficiente.');
+                }
+            } else {
+                alert(`Você precisa estar no nível ${item.level} para comprar este item.`);
+            }
+        }
+
+        function sellCurrentItem() {
+            if (currentItem && inventory[currentItem]) {
+                const money = moneyPerResource[currentItem];
+                currentMoney += money * inventory[currentItem];
+                delete inventory[currentItem];
+                saveProfileData();
+                updateMoneyDisplay();
+                updateInventoryDisplay();
+                document.getElementById('inventory-options').style.display = 'none';
+            }
+        }
+
+        function discardCurrentItem() {
+            if (currentItem && inventory[currentItem]) {
+                delete inventory[currentItem];
+                saveProfileData();
+                updateInventoryDisplay();
+                document.getElementById('inventory-options').style.display = 'none';
+            }
+        }
+
+        function buyItem(itemName, price, requiredLevel, toolType = null, damage = 0) {
+            if (level >= requiredLevel) {
+                if (currentMoney >= price) {
+                    currentMoney -= price;
+                    alert(`Você comprou ${itemName} por R$${price}.`);
+                    if (toolType) {
+                        equippedItem[toolType] = itemName;
+                        if (toolType === 'picareta') {
+                            equippedItem.picaretaDamage = damage;
+                        }
+                    }
+                    saveProfileData();
+                    updateMoneyDisplay();
+                    updateEquipmentDisplay();
+                } else {
+                    alert('Dinheiro insuficiente.');
+                }
+            } else {
+                alert(`Você precisa estar no nível ${requiredLevel} para comprar este item.`);
+            }
+        }
+    </script>
+</body>
+</html>
+
